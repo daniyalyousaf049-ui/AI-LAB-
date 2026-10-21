@@ -41,13 +41,12 @@ def run_alphabeta(depth, node_idx, is_max, scores, target_depth, alpha, beta):
         return bestvalue, total_leaves
 
 experiments=[
-    ("Default Lab Tree", [3, 5, 2, 9, 3, 5, 2, 9]),
-    ("Best Move Order", [5, 3, 9, 2, 2, 3, 9, 5]),
-    ("Worst Move Order", [2, 3, 2, 3, 5, 9, 5, 9]),
-    ("Uniform Values", [4, 4, 4, 4, 4, 4, 4, 4])
+    ("Default Lab Tree", [3,5,2,9,3,5,2,9]),
+    ("Best Move Order", [5,3,9,2,2,3,9,5]),
+    ("Worst Move Order", [2,3,2,3,5,9,5,9]),
+    ("Uniform Values", [4,4,4,4,4,4,4,4])
 ]
 
-# Run tests
 for title, score_list in experiments:
     tree_depth = int(math.log2(len(score_list)))
     
