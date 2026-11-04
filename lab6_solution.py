@@ -1,5 +1,5 @@
 # Lab 6: NLP Fundamentals - Tokenization, Embeddings & Text Chunking
-# Student: Daniyal Yousaf | Roll #: 097 | Section: BSAI-3B
+# Student: Daniyal Yousaf . Roll #: 097 . Section: BSAI-3B
 # Course: CS4944 - Artificial Intelligence
 
 import re
@@ -8,7 +8,6 @@ import csv
 import time
 import sys
 
-# avoid Windows console crashing on odd characters
 try:
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 except Exception:
@@ -25,8 +24,6 @@ except ImportError:
     print("  pip install numpy scikit-learn sentence-transformers")
     raise SystemExit(1)
 
-
-# ----- save everything printed to run_output.txt as well -----
 class Tee(object):
     def __init__(self, *files):
         self.files = files
@@ -57,10 +54,8 @@ def stop_logging():
         OUTPUT_FILE.close()
         OUTPUT_FILE = None
 
+# Retriever class(tfidf+embedding)
 
-# ============================================================
-# Retriever class (tfidf + embedding)
-# ============================================================
 class Retriever:
     """Simple search engine that can use TF-IDF or sentence embeddings."""
 
@@ -77,7 +72,7 @@ class Retriever:
             self.model = None
             self.doc_embeddings = None
         else:
-            # reuse a preloaded model when given (avoids reloading every config)
+
             if model is None:
                 self.model = SentenceTransformer(
                     "sentence-transformers/all-MiniLM-L6-v2", device="cpu"
@@ -119,10 +114,8 @@ class Retriever:
 
         return results
 
-
-# ============================================================
 # Chunking helpers (Task 2)
-# ============================================================
+
 def word_spans(text):
     """Return list of (start, end) character offsets for each non-whitespace word."""
     spans = []
@@ -133,7 +126,6 @@ def word_spans(text):
 
 def windows(text, size=40, overlap=10, offset=0):
     """Fixed word-window chunker. Returns list of (start_char, end_char) offsets."""
-    # invalid size/overlap must raise, not silently fix the step
     if size <= 0 or overlap < 0 or overlap >= size:
         raise ValueError("Require size > 0 and 0 <= overlap < size")
 
@@ -167,7 +159,6 @@ def sentence_chunks(text, size=40):
     if size <= 0:
         raise ValueError("size must be positive")
 
-    # teaching splitter: punctuation followed by whitespace
     parts = re.split(r"([.!?]\s+)", text)
     sentences = []
     i = 0
@@ -180,7 +171,6 @@ def sentence_chunks(text, size=40):
                 sentences.append(parts[i])
             i = i + 1
 
-    # map each sentence back to character offsets in the original text
     sent_info = []
     search_from = 0
     for s in sentences:
@@ -201,7 +191,7 @@ def sentence_chunks(text, size=40):
     cur_words = 0
 
     for info in sent_info:
-        # long sentence: flush current chunk, then fallback-window the long one
+
         if info["words"] > size:
             if cur_start is not None:
                 chunks.append((cur_start, cur_end))
@@ -267,10 +257,6 @@ def make_chunks(docs, strategy):
     return records
 
 
-# ============================================================
-# Synthetic handbook documents (150-250 words each)
-# Includes rule+exception, one >40-word sentence, and conflicts
-# ============================================================
 DOCS = {
     "late": (
         "University late submission policy applies to all undergraduate coursework in taught modules. "
@@ -358,7 +344,6 @@ DOCS = {
 }
 
 
-# labeled rule+exception strings used for integrity checks and hits
 RULE_EXCEPTIONS = [
     {
         "doc": "late",
@@ -387,10 +372,6 @@ RULE_EXCEPTIONS = [
 ]
 
 
-# ============================================================
-# Labeled queries (4 dev + 4 test answerable + 2 unanswerable)
-# evidence = full answer including condition/exception
-# ============================================================
 DEV_QUERIES = [
     {
         "id": "dev1",
@@ -408,7 +389,7 @@ DEV_QUERIES = [
         "query": "How do I reset my university password?",
         "doc": "password",
         "evidence": (
-            "Navigate to the login page and select Forgot Password, then enter your student email and complete "
+    "Navigate to the login page and select Forgot Password, then enter your student email and complete "
             "an identity check with your student ID and date of birth."
         ),
         "answerable": True,
@@ -417,7 +398,7 @@ DEV_QUERIES = [
     {
         "id": "dev3",
         "query": "What file formats are accepted for assignment upload?",
-        "doc": "assignment",
+    "doc": "assignment",
         "evidence": "Accepted file formats are PDF for written reports and ZIP for programming projects.",
         "answerable": True,
         "split": "dev",
@@ -436,12 +417,11 @@ DEV_QUERIES = [
 ]
 
 TEST_QUERIES = [
-    {
-        "id": "test1",
+    {"id": "test1",
         "query": "What proof is needed when I was ill and need more time?",
         "doc": "late",
         "evidence": (
-            "Extensions may be granted for documented medical issues, family emergencies, or verified system "
+         "Extensions may be granted for documented medical issues, family emergencies, or verified system "
             "outages, but students must email the module leader with a medical certificate before the due date."
         ),
         "answerable": True,
@@ -460,7 +440,7 @@ TEST_QUERIES = [
     },
     {
         "id": "test3",
-        "query": "How many pages is the monthly student print quota?",
+      "query": "How many pages is the monthly student print quota?",
         "doc": "printer",
         "evidence": "Each student receives a monthly quota of 150 pages in black and white.",
         "answerable": True,
@@ -496,9 +476,8 @@ TEST_QUERIES = [
 ]
 
 
-# ============================================================
 # FAQ data for Task 1 chatbot (includes 2 extra FAQs with sources)
-# ============================================================
+
 FAQ = [
     {
         "id": "faq:password",
@@ -518,7 +497,6 @@ FAQ = [
         "answer": "Request an extension with medical evidence before the deadline.",
         "source": "handbook.txt",
     },
-    # two new FAQs required by the lab
     {
         "id": "faq:printer",
         "question": "What is the monthly student print quota?",
@@ -546,8 +524,7 @@ def build_faq_bot(backend="tfidf"):
 def faq_reply(engine, query):
     if not query.strip():
         return "Please enter a question."
-
-    # exact canonical FAQ text gets the stored answer + source
+        
     for r in FAQ:
         if query.strip().casefold() == r["question"].casefold():
             return r["answer"] + " [source: " + r["source"] + "]"
@@ -562,9 +539,8 @@ def faq_reply(engine, query):
     return "\n".join(lines)
 
 
-# ============================================================
-# Evaluation helpers (Hit@3 / MRR@3 need doc id + full evidence)
-# ============================================================
+# Evaluation helpers (Hit@3/MRR@3 need doc id+full evidence)
+
 def check_hit(results, q):
     """Hit if top-3 chunk has matching doc id AND full evidence substring."""
     if q.get("doc") is None or q.get("evidence") is None:
@@ -631,16 +607,14 @@ def audit_token_lengths(model, texts, label):
     return max_len
 
 
-# ============================================================
-# Task 1: Tokenization + FAQ chatbot demos
-# ============================================================
+# Task 01:- Tokenization + FAQ chatbot demos
+
 def run_task1(model):
     print("=" * 60)
     print("TASK 1: Tokenization Comparison")
     print("=" * 60)
     print("MARKER_TOKEN_TABLE_START")
 
-    # six inputs: punctuation, contraction, email, course id, empty string, dotted filename
     text_list = [
         "AI, search!",
         "I can't log in.",
@@ -662,7 +636,7 @@ def run_task1(model):
         re_str = str(re_tokens) + " n=" + str(len(re_tokens))
 
         model_str = "-"
-        # model tokenizer only for first two English examples
+
         if idx < 2:
             model_str = str(model.tokenizer.tokenize(text))
 
@@ -678,7 +652,6 @@ def run_task1(model):
     print("- Model subwords are different again; do not treat the regex as a full tokenizer.")
     print("")
 
-    # FAQ chatbot demos (TF-IDF) for the report transcripts
     print("=" * 60)
     print("TASK 1: FAQ Chatbot (TF-IDF) demos")
     print("=" * 60)
@@ -719,9 +692,8 @@ def run_faq_chatbot_interactive():
         print("Bot:", faq_reply(engine, query))
 
 
-# ============================================================
-# Task 2: tests, stats, paraphrase retrieval
-# ============================================================
+# Task 02:- tests, stats, paraphrase retrieval
+
 def run_chunk_tests():
     print("=" * 60)
     print("TASK 2: Chunking tests")
@@ -762,7 +734,7 @@ def run_chunk_tests():
     print("PASS: long sentence fallback, spans=", len(long_spans),
           "max_words=", max(len(long[a:b].split()) for a, b in long_spans))
 
-    # offset integrity for make_chunks
+    # offset integrity for make-chunks
     tiny = {"example": "Reset your password. Keep recovery codes private."}
     for strategy in ["0overlap", "10overlap", "sentence"]:
         for c in make_chunks(tiny, strategy):
@@ -780,7 +752,6 @@ def run_task2(model):
     print("=" * 60)
     print("MARKER_CHUNK_STATS_START")
 
-    # show word counts for docs
     for name in DOCS:
         print("doc", name, "words=", count_words(DOCS[name]))
 
@@ -795,8 +766,6 @@ def run_task2(model):
     print("")
     print("Sentence splitter note: abbreviations like Mr. or e.g. can still break on the period.")
     print("")
-
-    # three paraphrased queries, TF-IDF vs embeddings on sentence chunks
     print("=" * 60)
     print("TASK 2: Paraphrase retrieval (sentence chunks)")
     print("=" * 60)
@@ -834,9 +803,8 @@ def run_task2(model):
     print("")
 
 
-# ============================================================
-# Task 3: retrieval evaluation + document chatbot
-# ============================================================
+# Task 03:- retrieval evaluation + doc chatbot
+
 def run_task3(model):
     print("=" * 60)
     print("TASK 3: Retrieval evaluation (dev/test, 6 configs)")
@@ -855,9 +823,8 @@ def run_task3(model):
     failures = []
 
     print("MARKER_METRICS_START")
-    print(f"{'Strategy':<12} {'Backend':<10} {'Split':<6} {'Hit@3':>7} {'MRR@3':>7} "
-          f"{'Chunks':>7} {'Encode(s)':>9} {'Search(s)':>9}")
-    print("-" * 80)
+    print(f"{'Strategy':<12} {'Backend':<10} {'Split':<6} {'Hit@3':>7} {'MRR@3':>7} "f"{'Chunks':>7} {'Encode(s)':>9} {'Search(s)':>9}")
+    print("-" * 77)
 
     for strategy in strategies:
         records = make_chunks(DOCS, strategy)
@@ -865,7 +832,6 @@ def run_task3(model):
         for r in records:
             texts.append(r["text"])
 
-        # audit token lengths once per strategy
         print("Token audit for strategy", strategy)
         audit_token_lengths(model, texts + query_texts, strategy)
 
@@ -887,7 +853,6 @@ def run_task3(model):
                 score_matrix = Q @ C.T
                 search_seconds = time.perf_counter() - t1
 
-            # separate metrics for dev and test
             for split_name in ["dev", "test"]:
                 hits_list = []
                 rr_list = []
@@ -898,7 +863,7 @@ def run_task3(model):
                     if not q["answerable"]:
                         continue
                     row = score_matrix[qi]
-                    # stable argsort descending
+  
                     ranked = list(np.argsort(-row, kind="stable")[:3])
                     good_ranks = []
                     rank = 1
@@ -936,7 +901,6 @@ def run_task3(model):
                     f"{encode_seconds:>9.3f} {search_seconds:>9.3f}"
                 )
 
-            # print top-3 for every query and collect failures
             print("")
             print("Top-3 details:", strategy, backend)
             for qi in range(len(all_queries)):
@@ -1018,7 +982,6 @@ def run_task3(model):
             best = row
         elif (row["hit_at_3"] == best["hit_at_3"] and row["mrr_at_3"] == best["mrr_at_3"]
               and row["backend"] == "embedding" and best["backend"] != "embedding"):
-            # prefer embedding when tied so paraphrase chatbot works better
             best = row
 
     selected_strategy = best["strategy"]
@@ -1026,14 +989,11 @@ def run_task3(model):
     print("Selected from DEV only:", selected_strategy, "+", selected_backend,
           "Hit@3=" + f"{best['hit_at_3']:.3f}", "MRR@3=" + f"{best['mrr_at_3']:.3f}")
 
-    # report matching TEST metrics without retuning
     for row in metrics_rows:
         if row["strategy"] == selected_strategy and row["backend"] == selected_backend and row["split"] == "test":
             print("Held-out TEST for selected config: Hit@3=" + f"{row['hit_at_3']:.3f}",
                   "MRR@3=" + f"{row['mrr_at_3']:.3f}")
     print("MARKER_SELECTION_END")
-
-    # print at least 3 real failures
     print("")
     print("MARKER_FAILURES_START")
     print("Automatic failure list (answerable misses in top-3):")
@@ -1055,7 +1015,6 @@ def run_task3(model):
         print("No answerable misses found in this run.")
     print("MARKER_FAILURES_END")
 
-    # save csv log
     if len(logs) > 0:
         with open("retrieval_log.csv", "w", newline="", encoding="utf-8") as f:
             writer = csv.DictWriter(f, fieldnames=list(logs[0].keys()))
@@ -1066,7 +1025,6 @@ def run_task3(model):
     with open("lab6_metrics.json", "w", encoding="utf-8") as f:
         json.dump({"metrics": metrics_rows, "selected": best, "failures": failures[:8]}, f, indent=2)
 
-    # scripted document chatbot demos for the report
     print("")
     print("=" * 60)
     print("TASK 3: Document chatbot demos (selected config)")
@@ -1104,7 +1062,7 @@ def run_task3(model):
             if len(preview) > 120:
                 preview = preview[:120] + "..."
             print("   ", preview)
-        # unanswerable: never auto-assert an answer
+
         if label == "unsupported" or choice == "":
             print("No answer selected. Rephrase or contact a human.")
         else:
@@ -1174,10 +1132,6 @@ def run_chatbot(model, strategy, backend):
         print("Source:", record["doc"], "characters", record["start"], record["end"])
         print("")
 
-
-# ============================================================
-# Main
-# ============================================================
 if __name__ == "__main__":
     start_logging()
     try:
@@ -1194,7 +1148,7 @@ if __name__ == "__main__":
         print("MARKER_VERSIONS_END")
         print("")
 
-        # load model once, time it separately
+        #load model 
         print("MARKER_TIMING_START")
         t_load = time.perf_counter()
         shared_model = SentenceTransformer(
@@ -1210,7 +1164,6 @@ if __name__ == "__main__":
         run_task2(shared_model)
         selected_strategy, selected_backend = run_task3(shared_model)
 
-        # interactive loops only when a real terminal is attached
         if sys.stdin.isatty():
             print("Opening FAQ chatbot next (type exit when finished).")
             run_faq_chatbot_interactive()
